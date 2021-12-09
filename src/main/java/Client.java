@@ -18,66 +18,71 @@ public class Client {
 
     static InputStream inputStream;
 
-    public static void main(String[] args) throws IOException {
-        Socket clientSocket = new Socket("localhost",61337);
-        OutputStream outputStream = clientSocket.getOutputStream();
-        inputStream = clientSocket.getInputStream();
-        RemoteTestingMessage remoteTestingMessageHello;
-        do {
-            outputStream.write(greeting().getMessageBytes());
-            remoteTestingMessageHello = readMessage();
-            checkDisconnect(remoteTestingMessageHello);
-            if (remoteTestingMessageHello.getHeader().getRCode() != 0) {
-                System.out.println("ОШИБКА: Пароль не верный. Повторите вход");
-            }
-            else {
-                System.out.println("Вы успешно вошли в свой профиль!");
-                RemoteTestingMessage remoteTestingMessageResult = readMessage();
-                checkDisconnect(remoteTestingMessageResult);
-                System.out.println("Ваш результат с прошлого теста: " + remoteTestingMessageResult.getResourceRecords().get(0).getDataString());
-                RemoteTestingMessage remoteTestingMessageVariants = readMessage();
-                checkDisconnect(remoteTestingMessageVariants);
-                System.out.println();
-                System.out.println("Доступные темы на выбор: ");
-                int j = 0;
-                for (ResourceRecord resourceRecord : remoteTestingMessageVariants.getResourceRecords()) {
-                    j++;
-                    System.out.println(j + ": " + resourceRecord.getDataString());
+    public static void main(String[] args) {
+        try {
+            Socket clientSocket = new Socket("localhost",61337);
+            OutputStream outputStream = clientSocket.getOutputStream();
+            inputStream = clientSocket.getInputStream();
+            RemoteTestingMessage remoteTestingMessageHello;
+            do {
+                outputStream.write(greeting().getMessageBytes());
+                remoteTestingMessageHello = readMessage();
+                checkDisconnect(remoteTestingMessageHello);
+                System.out.println(remoteTestingMessageHello.getHeader().getRCode());
+                if (remoteTestingMessageHello.getHeader().getRCode() != 0) {
+                    System.out.println("ОШИБКА: Пароль не верный. Повторите вход");
                 }
-                outputStream.write(pickAnswer((byte) 4).getMessageBytes());
-                RemoteTestingMessage test;
-                do {
-                    test = readMessage();
-                    checkDisconnect(test);
-                    if (test.getHeader().getRCode() == 2) {
-                        System.out.println("ОШИБКА: Нет такого теста. Введите номер тест заново");
-                        outputStream.write(pickAnswer((byte) 4).getMessageBytes());
-                    }
-                    else if (test.getHeader().getRCode() != 0) {
-                        System.out.println("ОШИБКА: Нет такого варианта ответа");
-                    }
-                    else if (test.getHeader().getMode() == 2) {
-                        System.out.println("Ваш результат: " + test.getResourceRecords().get(0).getDataString());
-                    }
-                    else {
-                        int i = 0;
-                        for (ResourceRecord resourceRecord : test.getResourceRecords()) {
-                            if (i != 0){
-                                System.out.println(i + ": " + resourceRecord.getDataString());
-                            }
-                            else {
-                                System.out.println(resourceRecord.getDataString());
-                            }
-                            i++;
+                else {
+                    System.out.println("Вы успешно вошли в свой профиль!");
+                    RemoteTestingMessage remoteTestingMessageResult = readMessage();
+                    checkDisconnect(remoteTestingMessageResult);
+                    System.out.println("Ваш результат с прошлого теста: " + remoteTestingMessageResult.getResourceRecords().get(0).getDataString());
+                    while (true) {
+                        RemoteTestingMessage remoteTestingMessageVariants = readMessage();
+                        checkDisconnect(remoteTestingMessageVariants);
+                        System.out.println();
+                        System.out.println("Доступные темы на выбор: ");
+                        int j = 0;
+                        for (ResourceRecord resourceRecord : remoteTestingMessageVariants.getResourceRecords()) {
+                            j++;
+                            System.out.println(j + ": " + resourceRecord.getDataString());
                         }
+                        outputStream.write(pickAnswer((byte) 4).getMessageBytes());
+                        RemoteTestingMessage test;
+                        do {
+                            test = readMessage();
+                            checkDisconnect(test);
+                            if (test.getHeader().getRCode() == 2) {
+                                System.out.println("ОШИБКА: Нет такого теста. Введите номер тест заново");
+                                outputStream.write(pickAnswer((byte) 4).getMessageBytes());
+                            } else if (test.getHeader().getRCode() != 0) {
+                                System.out.println("ОШИБКА: Нет такого варианта ответа");
+                            } else if (test.getHeader().getMode() == 2) {
+                                System.out.println("Ваш результат: " + test.getResourceRecords().get(0).getDataString());
+                            } else {
+                                int i = 0;
+                                for (ResourceRecord resourceRecord : test.getResourceRecords()) {
+                                    if (i != 0) {
+                                        System.out.println(i + ": " + resourceRecord.getDataString());
+                                    } else {
+                                        System.out.println(resourceRecord.getDataString());
+                                    }
+                                    i++;
+                                }
+                            }
+                            if (test.getHeader().getMode() != 2 && test.getHeader().getRCode() != 2) {
+                                outputStream.write(pickAnswer((byte) 5).getMessageBytes());
+                            }
+                        } while (test.getHeader().getMode() != 2);
+
+                        outputStream.write(pickAnswer((byte) 3).getMessageBytes());
                     }
-                    if (test.getHeader().getMode() != 2 && test.getHeader().getRCode() != 2) {
-                        outputStream.write(pickAnswer((byte) 5).getMessageBytes());
-                    }
-                } while (test.getHeader().getMode() != 2);
-                disconnect();
-            }
-        } while (remoteTestingMessageHello.getHeader().getRCode() != 0);
+                }
+            } while (remoteTestingMessageHello.getHeader().getRCode() != 0);
+        }
+        catch (IOException ignored) {
+        }
+
     }
 
     private static  RemoteTestingMessage readMessage() throws IOException {
