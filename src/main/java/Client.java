@@ -130,20 +130,23 @@ public class Client {
     }
 
     private static RemoteTestingMessage pickAnswer(byte mode){
-        Scanner scanner = new Scanner(System.in);
         RemoteTestingMessage message = new RemoteTestingMessage();
         Header header = new Header();
         header.setCs(false);
         header.setMode(mode);
-        header.setRrCount(1);
+        if (mode != 3) {
+            Scanner scanner = new Scanner(System.in);
+            header.setRrCount(1);
+            List<ResourceRecord> resourceRecordList = new ArrayList<>();
+            ResourceRecord changeTheme = new ResourceRecord();
+            String theme = scanner.nextLine();
+            changeTheme.setData(theme.getBytes());
+            changeTheme.setLength((short) theme.getBytes().length);
+            resourceRecordList.add(changeTheme);
+            message.setResourceRecords(resourceRecordList);
+        }
+        header.setRrCount(0);
         message.setHeader(header);
-        List<ResourceRecord> resourceRecordList = new ArrayList<>();
-        ResourceRecord changeTheme = new ResourceRecord();
-        String theme = scanner.nextLine();
-        changeTheme.setData(theme.getBytes());
-        changeTheme.setLength((short) theme.getBytes().length);
-        resourceRecordList.add(changeTheme);
-        message.setResourceRecords(resourceRecordList);
         return message;
     }
 
