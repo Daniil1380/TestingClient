@@ -1,5 +1,9 @@
 
 import com.google.common.primitives.Bytes;
+import com.polytech.protocol.remotetesting.model.Header;
+import com.polytech.protocol.remotetesting.model.RemoteTestingMessage;
+import com.polytech.protocol.remotetesting.model.ResourceRecord;
+import com.polytech.protocol.remotetesting.model.Util;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
